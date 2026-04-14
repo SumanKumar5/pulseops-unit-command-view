@@ -1,0 +1,19 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.critical {
+  animation: pulse-border 2s infinite;
+}
+
+@keyframes pulse-border {
+  0%,
+  100% {
+    border-left-color: #ef4444;
+  }
+  50% {
+    border-left-color: #fca5a5;
+  }
+}
