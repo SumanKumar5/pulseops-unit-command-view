@@ -299,7 +299,8 @@ Produces `mock-server/data/hospital.json` with:
 - Alert panel uses `aria-live="assertive"` for critical alerts, `aria-live="polite"` for others
 - Slide-over panels use `role="dialog"` with `aria-modal="true"`
 - Form controls in filters have associated labels
-- axe-core integrated in development mode for continuous a11y auditing
+- axe-core integrated in development mode (`@axe-core/react`) for continuous a11y auditing
+- Manually tested with NVDA + Chrome on Windows for screen reader announcements of critical alerts via ARIA live regions
 
 ### WCAG 2.1 AA Compliance
 

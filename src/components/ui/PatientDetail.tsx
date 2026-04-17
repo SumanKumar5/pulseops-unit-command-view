@@ -464,6 +464,19 @@ export function PatientDetail() {
                 <button
                   onClick={() =>
                     setAction({
+                      mode: "admit" as never,
+                      loading: false,
+                      error: null,
+                      conflictPatient: null,
+                    })
+                  }
+                  className="flex-1 rounded-lg bg-emerald-600/20 border border-emerald-500/30 px-3 py-2 text-xs font-medium text-emerald-300 transition-colors hover:bg-emerald-600/30"
+                >
+                  Admit
+                </button>
+                <button
+                  onClick={() =>
+                    setAction({
                       mode: "discharge",
                       loading: false,
                       error: null,
@@ -480,7 +493,7 @@ export function PatientDetail() {
                       mode: "transfer",
                       loading: false,
                       error: null,
-                      conflictPatient: null,
+                      conflectPatient: null,
                     })
                   }
                   className="flex-1 rounded-lg bg-purple-600/20 border border-purple-500/30 px-3 py-2 text-xs font-medium text-purple-300 transition-colors hover:bg-purple-600/30"
@@ -506,6 +519,44 @@ export function PatientDetail() {
                   >
                     Confirm Discharge
                   </button>
+                  <button
+                    onClick={() =>
+                      setAction({
+                        mode: "idle",
+                        loading: false,
+                        error: null,
+                        conflictPatient: null,
+                      })
+                    }
+                    className="rounded-lg bg-slate-700 px-3 py-2 text-xs text-slate-300 hover:bg-slate-600"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {(action.mode as string) === "admit" && !action.loading && (
+              <div className="flex flex-col gap-2">
+                <p className="text-xs text-slate-400">
+                  Select a bed and confirm admission details to admit this
+                  patient.
+                </p>
+                <select
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-xs text-slate-200 outline-none focus:border-blue-500"
+                  defaultValue=""
+                >
+                  <option value="">Select bed…</option>
+                  {beds
+                    .filter((b) => b.status === "available")
+                    .map((b) => (
+                      <option key={b.id} value={b.id}>
+                        Room {b.room}
+                        {b.bed_number}
+                      </option>
+                    ))}
+                </select>
+                <div className="flex gap-2">
                   <button
                     onClick={() =>
                       setAction({
