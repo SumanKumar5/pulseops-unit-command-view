@@ -125,15 +125,13 @@ function applySort(indices: number[], sort: SortState): number[] {
       col: SortState["column"],
       dir: SortState["direction"],
     ): number => {
-      let av: string | number = 0;
-      let bv: string | number = 0;
       if (col === "name") {
-        av = `${a.last_name} ${a.first_name}`;
-        bv = `${b.last_name} ${b.first_name}`;
-        return dir === "asc"
-          ? (av as string).localeCompare(bv as string)
-          : (bv as string).localeCompare(av as string);
+        const av = `${a.last_name} ${a.first_name}`;
+        const bv = `${b.last_name} ${b.first_name}`;
+        return dir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
       }
+      let av = 0;
+      let bv = 0;
       if (col === "acuity") {
         av = a.acuity;
         bv = b.acuity;
@@ -146,19 +144,24 @@ function applySort(indices: number[], sort: SortState): number[] {
         av = new Date(a.admitted_at).getTime();
         bv = new Date(b.admitted_at).getTime();
       }
-      return dir === "asc"
-        ? (av as number) - (bv as number)
-        : (bv as number) - (av as number);
+      return dir === "asc" ? av - bv : bv - av;
     };
 
     const primary = compare(sort.column, sort.direction);
     if (primary !== 0) return primary;
-    if (sort.secondary)
-      return compare(sort.secondary.column, sort.secondary.direction);
+    if (sort.secondary) {
+      const secondary = compare(
+        sort.secondary.column,
+        sort.secondary.direction,
+      );
+      if (secondary !== 0) return secondary;
+    }
+    if (sort.tertiary) {
+      return compare(sort.tertiary.column, sort.tertiary.direction);
+    }
     return 0;
   });
 }
-
 function computeHandoffList(): number[] {
   const now = Date.now();
   const four_hours = 4 * 3600 * 1000;

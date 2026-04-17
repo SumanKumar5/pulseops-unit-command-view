@@ -196,6 +196,10 @@ export interface SortState {
     column: "name" | "acuity" | "los" | "last_event";
     direction: "asc" | "desc";
   };
+  tertiary?: {
+    column: "name" | "acuity" | "los" | "last_event";
+    direction: "asc" | "desc";
+  };
 }
 
 export type ConnectionState =

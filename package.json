@@ -9,8 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
-    "mock-server": "npx ts-node --esm mock-server/server.ts",
-    "seed": "npx ts-node --esm mock-server/seed.ts"
+    "mock-server": "cd mock-server && npm start",
+    "seed": "cd mock-server && npm run seed"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.99.0",

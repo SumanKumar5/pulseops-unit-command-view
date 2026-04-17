@@ -10,14 +10,31 @@ const OVERSCAN = 8;
 type SortCol = SortState["column"];
 
 function SortIcon({ col, sort }: { col: SortCol; sort: SortState }) {
-  if (sort.column !== col) {
-    return <span className="ml-1 text-slate-600">↕</span>;
+  if (sort.column === col) {
+    return (
+      <span className="ml-1 text-blue-400">
+        {sort.direction === "asc" ? "↑" : "↓"}{" "}
+        <span className="text-xs text-blue-600">1</span>
+      </span>
+    );
   }
-  return (
-    <span className="ml-1 text-blue-400">
-      {sort.direction === "asc" ? "↑" : "↓"}
-    </span>
-  );
+  if (sort.secondary?.column === col) {
+    return (
+      <span className="ml-1 text-blue-300">
+        {sort.secondary.direction === "asc" ? "↑" : "↓"}{" "}
+        <span className="text-xs text-blue-500">2</span>
+      </span>
+    );
+  }
+  if (sort.tertiary?.column === col) {
+    return (
+      <span className="ml-1 text-blue-200">
+        {sort.tertiary.direction === "asc" ? "↑" : "↓"}{" "}
+        <span className="text-xs text-blue-400">3</span>
+      </span>
+    );
+  }
+  return <span className="ml-1 text-slate-600">↕</span>;
 }
 
 export function PatientLog() {
@@ -155,17 +172,52 @@ export function PatientLog() {
 
   const handleSort = useCallback(
     (col: SortCol, e: React.MouseEvent) => {
-      if (e.shiftKey && sortState.column !== col) {
+      if (e.shiftKey) {
+        if (sortState.column === col) {
+          setSortState({
+            ...sortState,
+            direction: sortState.direction === "asc" ? "desc" : "asc",
+          });
+          return;
+        }
+        if (!sortState.secondary) {
+          setSortState({
+            ...sortState,
+            secondary: { column: col, direction: "desc" },
+          });
+          return;
+        }
+        if (sortState.secondary.column === col) {
+          setSortState({
+            ...sortState,
+            secondary: {
+              column: col,
+              direction:
+                sortState.secondary.direction === "asc" ? "desc" : "asc",
+            },
+          });
+          return;
+        }
+        if (!sortState.tertiary) {
+          setSortState({
+            ...sortState,
+            tertiary: { column: col, direction: "desc" },
+          });
+          return;
+        }
         setSortState({
           ...sortState,
-          secondary: { column: col, direction: "desc" },
+          tertiary: {
+            column: col,
+            direction: sortState.tertiary.direction === "asc" ? "desc" : "asc",
+          },
         });
         return;
       }
       setSortState(
         sortState.column === col
           ? {
-              ...sortState,
+              column: col,
               direction: sortState.direction === "asc" ? "desc" : "asc",
             }
           : { column: col, direction: "desc" },

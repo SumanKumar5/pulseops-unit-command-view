@@ -435,6 +435,34 @@ const BED_STATUSES: Bed["status"][] = [
 
 function startSSESimulation() {
   setInterval(() => {
+    const occupiedBeds = db.beds.filter(
+      (b) => b.status === "occupied" && b.patient_id,
+    );
+    if (occupiedBeds.length === 0) return;
+    const bed = occupiedBeds[Math.floor(Math.random() * occupiedBeds.length)];
+    if (!bed.patient_id) return;
+    const vitals = ["hr", "spo2", "bp_sys", "rr"];
+    const vital = vitals[Math.floor(Math.random() * vitals.length)]!;
+    const values: Record<string, number> = {
+      hr: Math.floor(Math.random() * 30) + 95,
+      spo2: Math.floor(Math.random() * 6) + 88,
+      bp_sys: Math.floor(Math.random() * 30) + 155,
+      rr: Math.floor(Math.random() * 8) + 18,
+    };
+    const thresholds: Record<string, number> = {
+      hr: 120,
+      spo2: 92,
+      bp_sys: 180,
+      rr: 24,
+    };
+    broadcast(bed.unit_id, "TELEMETRY_SPIKE", {
+      patient_id: bed.patient_id,
+      vital,
+      value: values[vital],
+      threshold: thresholds[vital],
+    });
+  }, 500);
+  setInterval(() => {
     db.units.forEach((unit) => {
       if (sseClients.get(unit.id)?.length === 0) return;
       broadcast(unit.id, "HEARTBEAT", {
@@ -496,6 +524,18 @@ function startSSESimulation() {
     broadcast(alert.unit_id, "ALERT_FIRED", alert);
   }, 7000);
 }
+
+setInterval(() => {
+  const occupiedBeds = db.beds.filter((b) => b.status === "occupied");
+  if (occupiedBeds.length === 0) return;
+  const bed = occupiedBeds[Math.floor(Math.random() * occupiedBeds.length)];
+  broadcast(bed.unit_id, "TELEMETRY_SPIKE", {
+    patient_id: bed.patient_id ?? "",
+    vital: "hr",
+    value: Math.floor(Math.random() * 40) + 90,
+    threshold: 120,
+  });
+}, 500);
 
 startSSESimulation();
 

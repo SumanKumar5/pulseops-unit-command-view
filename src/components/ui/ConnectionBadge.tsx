@@ -40,12 +40,13 @@ export function ConnectionBadge() {
 
   return (
     <div className="flex items-center gap-2">
-      {connectionState === "offline" && queueSize > 0 && (
-        <span className="text-xs text-amber-400">
-          {queueSize} queued · {timeSince}s ago
-        </span>
-      )}
-      {connectionState === "reconnecting" && (
+      {(connectionState === "offline" || connectionState === "reconnecting") &&
+        queueSize > 0 && (
+          <span className="text-xs text-amber-400">
+            {queueSize} queued · {timeSince}s ago
+          </span>
+        )}
+      {connectionState === "reconnecting" && queueSize === 0 && (
         <span className="text-xs text-amber-400">
           Last update {timeSince}s ago
         </span>
