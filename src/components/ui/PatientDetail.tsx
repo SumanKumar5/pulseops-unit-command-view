@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAppStore } from "@/store/useAppStore";
 import { api } from "@/lib/api";
@@ -118,17 +118,32 @@ export function PatientDetail() {
   const [transferUnit, setTransferUnit] = useState("");
   const [transferBed, setTransferBed] = useState("");
 
+  const [targetUnitBeds, setTargetUnitBeds] = useState<import("@/types").Bed[]>(
+    [],
+  );
+
+  useEffect(() => {
+    if (!transferUnit) {
+      setTargetUnitBeds([]);
+      return;
+    }
+    api
+      .getCensus(transferUnit)
+      .then((data) => {
+        setTargetUnitBeds(data.beds.filter((b) => b.status === "available"));
+      })
+      .catch(() => setTargetUnitBeds([]));
+  }, [transferUnit]);
+
   const { data: patient, isLoading } = useQuery({
     queryKey: ["patient", activePatientId],
     queryFn: () => api.getPatient(activePatientId!),
     enabled: !!activePatientId,
   });
 
-  const availableBeds = beds.filter(
-    (b) =>
-      b.status === "available" &&
-      (transferUnit ? b.unit_id === transferUnit : true),
-  );
+  // const availableBeds = beds.filter(
+  //   (b) => b.status === "available" && b.unit_id === transferUnit,
+  // );
 
   const handleDischarge = async () => {
     if (!patient) return;
@@ -539,16 +554,24 @@ export function PatientDetail() {
             {(action.mode as string) === "admit" && !action.loading && (
               <div className="flex flex-col gap-2">
                 <p className="text-xs text-slate-400">
-                  Select a bed and confirm admission details to admit this
-                  patient.
+                  Admit this patient to an available bed in the current unit.
                 </p>
                 <select
+                  id="admit-bed-select"
                   className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-xs text-slate-200 outline-none focus:border-blue-500"
                   defaultValue=""
+                  onChange={(e) => {
+                    const el = e.currentTarget;
+                    el.dataset["selectedBed"] = e.target.value;
+                  }}
                 >
-                  <option value="">Select bed…</option>
+                  <option value="">Select available bed…</option>
                   {beds
-                    .filter((b) => b.status === "available")
+                    .filter(
+                      (b) =>
+                        b.status === "available" &&
+                        b.unit_id === patient.unit_id,
+                    )
                     .map((b) => (
                       <option key={b.id} value={b.id}>
                         Room {b.room}
@@ -556,7 +579,75 @@ export function PatientDetail() {
                       </option>
                     ))}
                 </select>
-                <div className="flex gap-2">
+                <div className="flex gap-2 mt-1">
+                  <button
+                    onClick={async () => {
+                      const sel = document.getElementById(
+                        "admit-bed-select",
+                      ) as HTMLSelectElement;
+                      const bedId = sel?.value;
+                      if (!bedId) return;
+                      setAction({
+                        mode: "admit" as never,
+                        loading: true,
+                        error: null,
+                        conflictPatient: null,
+                      });
+                      try {
+                        const res = await api.admitPatient(
+                          patient.id,
+                          patient.etag,
+                          {
+                            bed_id: bedId,
+                            unit_id: patient.unit_id ?? "",
+                            admitting_provider_id:
+                              patient.attending_provider_id,
+                            acuity: patient.acuity,
+                            chief_complaint: patient.chief_complaint,
+                          },
+                        );
+                        upsertPatient(res.data.patient);
+                        setAction({
+                          mode: "idle",
+                          loading: false,
+                          error: null,
+                          conflictPatient: null,
+                        });
+                      } catch (err: unknown) {
+                        const status = (
+                          err as {
+                            response?: {
+                              status?: number;
+                              data?: { current_state?: Patient };
+                            };
+                          }
+                        )?.response?.status;
+                        if (status === 409) {
+                          const current = (
+                            err as {
+                              response: { data: { current_state: Patient } };
+                            }
+                          ).response.data.current_state;
+                          setAction({
+                            mode: "admit" as never,
+                            loading: false,
+                            error: "Conflict — record changed",
+                            conflictPatient: current,
+                          });
+                        } else {
+                          setAction({
+                            mode: "admit" as never,
+                            loading: false,
+                            error: "Admit failed. Try again.",
+                            conflictPatient: null,
+                          });
+                        }
+                      }
+                    }}
+                    className="flex-1 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-500 transition-colors"
+                  >
+                    Confirm Admit
+                  </button>
                   <button
                     onClick={() =>
                       setAction({
@@ -600,7 +691,7 @@ export function PatientDetail() {
                     className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-xs text-slate-200 outline-none focus:border-blue-500"
                   >
                     <option value="">Select target bed…</option>
-                    {availableBeds.map((b) => (
+                    {targetUnitBeds.map((b) => (
                       <option key={b.id} value={b.id}>
                         Room {b.room}
                         {b.bed_number}

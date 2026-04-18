@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo } from "react";
 import type { Patient } from "@/types";
 import { Badge } from "@/components/ui/Badge";
 
@@ -27,14 +27,15 @@ const STATUS_COLORS: Record<Patient["status"], string> = {
   boarding: "text-orange-400",
 };
 
-const COLLAPSED_H = 44;
-const EXPANDED_H = 140;
+const GRID = "16px 20px 160px 64px 110px 88px 140px 1fr 96px 88px";
+export const COLLAPSED_H = 44;
+export const EXPANDED_H = 140;
 
 function VitalsSparkline({ vitals }: { vitals: Patient["vitals_history"] }) {
   const last3 = vitals.slice(0, 3);
   if (last3.length === 0) return null;
   return (
-    <div className="flex items-center gap-3 mt-2">
+    <div className="flex items-center gap-2 mt-2 flex-wrap">
       {last3.map((v, i) => (
         <div
           key={i}
@@ -79,18 +80,20 @@ export const PatientRow = memo(function PatientRow({
     patient.los_hours >= 24
       ? `${Math.floor(patient.los_hours / 24)}d ${patient.los_hours % 24}h`
       : `${patient.los_hours}h`;
-
   const isOverLos = patient.los_hours > 72;
 
   return (
     <div
       style={{ ...style, height: isExpanded ? EXPANDED_H : COLLAPSED_H }}
-      className={`absolute left-0 right-0 border-b border-slate-800/60 transition-colors ${
+      className={`absolute left-0 right-0 border-b border-slate-800/60 transition-[height,colors] duration-150 ${
         isSelected ? "bg-blue-900/20" : "hover:bg-slate-800/40"
       }`}
       role="row"
     >
-      <div className="flex h-11 items-center gap-3 px-4">
+      <div
+        className="grid items-center px-2"
+        style={{ gridTemplateColumns: GRID, height: COLLAPSED_H }}
+      >
         <input
           type="checkbox"
           checked={isSelected}
@@ -102,7 +105,7 @@ export const PatientRow = memo(function PatientRow({
 
         <button
           onClick={() => onToggleExpand(patient.id)}
-          className="flex w-4 items-center justify-center text-slate-500 hover:text-slate-300"
+          className="flex items-center justify-center text-slate-500 hover:text-slate-300"
           aria-label={isExpanded ? "Collapse row" : "Expand row"}
         >
           <svg
@@ -120,18 +123,20 @@ export const PatientRow = memo(function PatientRow({
           </svg>
         </button>
 
-        <div className="w-36 min-w-0">
+        <div className="min-w-0 px-2">
           <div className="truncate text-sm font-medium text-slate-100">
             {patient.last_name}, {patient.first_name}
           </div>
           <div className="text-xs text-slate-500">{patient.mrn}</div>
         </div>
 
-        <Badge variant={ACUITY_VARIANT[patient.acuity]}>
-          A{patient.acuity}
-        </Badge>
+        <div className="px-1">
+          <Badge variant={ACUITY_VARIANT[patient.acuity]}>
+            A{patient.acuity}
+          </Badge>
+        </div>
 
-        <div className="w-24 min-w-0">
+        <div className="min-w-0 px-2">
           <div
             className={`text-xs font-medium capitalize ${STATUS_COLORS[patient.status]}`}
           >
@@ -139,19 +144,21 @@ export const PatientRow = memo(function PatientRow({
           </div>
         </div>
 
-        <div className="w-20 min-w-0">
+        <div className="px-2">
           <span
-            className={`text-xs ${isOverLos ? "font-semibold text-orange-400" : "text-slate-400"}`}
+            className={`text-xs tabular-nums ${isOverLos ? "font-semibold text-orange-400" : "text-slate-400"}`}
           >
             {losDisplay}
           </span>
         </div>
 
-        <div className="w-28 min-w-0 truncate text-xs text-slate-400">
-          {patient.chief_complaint}
+        <div className="min-w-0 px-2">
+          <span className="block truncate text-xs text-slate-400">
+            {patient.chief_complaint}
+          </span>
         </div>
 
-        <div className="flex flex-1 items-center gap-1.5 overflow-hidden">
+        <div className="flex min-w-0 items-center gap-1 overflow-hidden px-2">
           {patient.flags.slice(0, 3).map((flag) => (
             <Badge
               key={flag}
@@ -173,32 +180,34 @@ export const PatientRow = memo(function PatientRow({
           )}
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 px-1">
           {patient.isolation_type && (
             <span className="rounded bg-red-500/20 px-1.5 py-0.5 text-xs text-red-300">
               {patient.isolation_type.toUpperCase()}
             </span>
           )}
           {patient.fall_risk === "high" && (
-            <span className="text-amber-400" title="High fall risk">
+            <span className="text-xs text-amber-400" title="High fall risk">
               ⚠
             </span>
           )}
         </div>
 
-        <button
-          onClick={() => onAcknowledgeFlag(patient.id)}
-          className="ml-auto rounded bg-slate-700/60 px-2 py-1 text-xs text-slate-400 transition-colors hover:bg-slate-600 hover:text-slate-200"
-        >
-          Ack Flag
-        </button>
+        <div className="flex items-center justify-end px-1">
+          <button
+            onClick={() => onAcknowledgeFlag(patient.id)}
+            className="rounded bg-slate-700/60 px-2 py-1 text-xs text-slate-400 transition-colors hover:bg-slate-600 hover:text-slate-200 whitespace-nowrap"
+          >
+            Ack Flag
+          </button>
+        </div>
       </div>
 
       {isExpanded && (
         <div className="px-4 pb-3">
           <div className="text-xs text-slate-500 mb-1">Latest Vitals</div>
           <VitalsSparkline vitals={patient.vitals_history} />
-          <div className="mt-2 flex gap-2">
+          <div className="mt-2 flex gap-3 flex-wrap">
             <span className="text-xs text-slate-500">
               Dx: <span className="text-slate-300">{patient.admitting_dx}</span>
             </span>
@@ -220,5 +229,3 @@ export const PatientRow = memo(function PatientRow({
     </div>
   );
 }, areEqual);
-
-export { COLLAPSED_H, EXPANDED_H };

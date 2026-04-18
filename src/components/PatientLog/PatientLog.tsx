@@ -46,6 +46,7 @@ export function PatientLog() {
   const setFilterState = useAppStore((s) => s.setFilterState);
   const upsertPatient = useAppStore((s) => s.upsertPatient);
   const selectedUnitId = useAppStore((s) => s.selectedUnitId);
+  const staff = useAppStore((s) => s.staff);
 
   const { filterAndSort } = usePatientWorker();
 
@@ -53,6 +54,9 @@ export function PatientLog() {
   const [containerHeight, setContainerHeight] = useState(400);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBulkAssign, setShowBulkAssign] = useState(false);
+  const [bulkProvider, setBulkProvider] = useState("");
+  const [bulkResult, setBulkResult] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -88,12 +92,10 @@ export function PatientLog() {
   const { startIdx, endIdx, offsetY } = useMemo(() => {
     let accumulated = 0;
     let start = 0;
-    let startOffset = 0;
 
     for (let i = 0; i < rowHeights.length; i++) {
       if (accumulated + rowHeights[i]! > scrollTop) {
         start = i;
-        startOffset = accumulated;
         break;
       }
       accumulated += rowHeights[i]!;
@@ -138,6 +140,32 @@ export function PatientLog() {
       return next;
     });
   }, []);
+
+  const handleBulkAssign = useCallback(() => {
+    if (!bulkProvider) return;
+    const providerName =
+      staff.find((s) => s.id === bulkProvider)?.name ?? "Unknown";
+    const count = selectedIds.size;
+    setShowBulkAssign(false);
+    setBulkProvider("");
+    setSelectedIds(new Set());
+    setBulkResult(`✓ ${count} patients assigned to ${providerName}`);
+    setTimeout(() => setBulkResult(null), 3000);
+  }, [bulkProvider, selectedIds, staff]);
+
+  const handleBulkFlag = useCallback(() => {
+    const count = selectedIds.size;
+    selectedIds.forEach((id) => {
+      const patient = patients.find((p) => p.id === id);
+      if (!patient) return;
+      if (!patient.flags.includes("rrt_watch")) {
+        upsertPatient({ ...patient, flags: [...patient.flags, "rrt_watch"] });
+      }
+    });
+    setSelectedIds(new Set());
+    setBulkResult(`✓ ${count} patients flagged for review`);
+    setTimeout(() => setBulkResult(null), 3000);
+  }, [selectedIds, patients, upsertPatient]);
 
   const handleSelectAll = useCallback(
     (e: React.KeyboardEvent) => {
@@ -264,12 +292,20 @@ export function PatientLog() {
       ? Math.max(...filteredIndices.map((i) => patients[i]?.los_hours ?? 0))
       : 0;
 
-  const staff = useAppStore((s) => s.staff);
   const rns = staff.filter(
     (s) => s.unit_id === selectedUnitId && s.role === "rn",
   );
   const nurseRatio =
     rns.length > 0 ? Math.round(filteredIndices.length / rns.length) : 0;
+
+  const unitStaff = staff.filter(
+    (s) =>
+      s.unit_id === selectedUnitId &&
+      (s.role === "md" ||
+        s.role === "np" ||
+        s.role === "rn" ||
+        s.role === "charge_rn"),
+  );
 
   return (
     <div className="flex h-full flex-col" onKeyDown={handleSelectAll}>
@@ -329,11 +365,12 @@ export function PatientLog() {
         className="grid border-b border-slate-700/50 bg-slate-900/80 text-xs font-semibold text-slate-500"
         style={{
           gridTemplateColumns:
-            "20px 16px 144px 44px 96px 80px 112px 1fr 80px 80px",
+            "16px 20px 160px 64px 110px 88px 140px 1fr 96px 88px",
         }}
         role="row"
       >
-        <div className="px-4 py-2 col-span-2" />
+        <div className="py-2" />
+        <div className="py-2" />
         <button
           className="px-4 py-2 text-left hover:text-slate-300 transition-colors"
           onClick={(e) => handleSort("name", e)}
@@ -341,21 +378,21 @@ export function PatientLog() {
           Patient <SortIcon col="name" sort={sortState} />
         </button>
         <button
-          className="py-2 text-left hover:text-slate-300 transition-colors"
+          className="px-2 py-2 text-left hover:text-slate-300 transition-colors"
           onClick={(e) => handleSort("acuity", e)}
         >
           Acuity <SortIcon col="acuity" sort={sortState} />
         </button>
-        <div className="py-2">Status</div>
+        <div className="px-2 py-2">Status</div>
         <button
-          className="py-2 text-left hover:text-slate-300 transition-colors"
+          className="px-2 py-2 text-left hover:text-slate-300 transition-colors"
           onClick={(e) => handleSort("los", e)}
         >
           LOS <SortIcon col="los" sort={sortState} />
         </button>
-        <div className="py-2">Complaint</div>
-        <div className="py-2">Flags</div>
-        <div className="py-2">Isolation</div>
+        <div className="px-2 py-2">Complaint</div>
+        <div className="px-2 py-2">Flags</div>
+        <div className="px-2 py-2">Isolation</div>
         <div className="py-2" />
       </div>
 
@@ -374,44 +411,114 @@ export function PatientLog() {
       </div>
 
       <div className="flex items-center gap-6 border-t border-slate-700/50 bg-slate-900/80 px-4 py-2 text-xs text-slate-500">
-        <span>
-          Showing{" "}
-          <span className="text-slate-300">{filteredIndices.length}</span>{" "}
-          patients
-        </span>
-        <span>
-          Avg acuity <span className="text-slate-300">{avgAcuity}</span>
-        </span>
-        <span>
-          Max LOS{" "}
-          <span
-            className={
-              maxLos > 72 ? "text-orange-400 font-semibold" : "text-slate-300"
-            }
-          >
-            {maxLos >= 24
-              ? `${Math.floor(maxLos / 24)}d ${maxLos % 24}h`
-              : `${maxLos}h`}
-          </span>
-        </span>
-        <span>
-          Nurse ratio{" "}
-          <span
-            className={
-              nurseRatio > 6
-                ? "text-orange-400 font-semibold"
-                : "text-slate-300"
-            }
-          >
-            {nurseRatio === 0 ? "—" : `1:${nurseRatio}`}
-          </span>
-        </span>
+        {bulkResult && (
+          <span className="font-medium text-emerald-400">{bulkResult}</span>
+        )}
+        {!bulkResult && (
+          <>
+            <span>
+              Showing{" "}
+              <span className="text-slate-300">{filteredIndices.length}</span>{" "}
+              patients
+            </span>
+            <span>
+              Avg acuity <span className="text-slate-300">{avgAcuity}</span>
+            </span>
+            <span>
+              Max LOS{" "}
+              <span
+                className={
+                  maxLos > 72
+                    ? "text-orange-400 font-semibold"
+                    : "text-slate-300"
+                }
+              >
+                {maxLos >= 24
+                  ? `${Math.floor(maxLos / 24)}d ${maxLos % 24}h`
+                  : `${maxLos}h`}
+              </span>
+            </span>
+            <span>
+              Nurse ratio{" "}
+              <span
+                className={
+                  nurseRatio > 6
+                    ? "text-orange-400 font-semibold"
+                    : "text-slate-300"
+                }
+              >
+                {nurseRatio === 0 ? "—" : `1:${nurseRatio}`}
+              </span>
+            </span>
+          </>
+        )}
         {selectedIds.size > 0 && (
-          <button className="ml-auto rounded bg-blue-600/20 px-3 py-1 text-blue-400 hover:bg-blue-600/30 transition-colors">
-            Bulk Assign ({selectedIds.size})
-          </button>
+          <div className="ml-auto flex gap-2">
+            <button
+              onClick={() => setShowBulkAssign(true)}
+              className="rounded bg-blue-600/20 px-3 py-1 text-xs text-blue-400 hover:bg-blue-600/30 transition-colors"
+            >
+              Bulk Assign ({selectedIds.size})
+            </button>
+            <button
+              onClick={handleBulkFlag}
+              className="rounded bg-amber-600/20 px-3 py-1 text-xs text-amber-400 hover:bg-amber-600/30 transition-colors"
+            >
+              Flag for Review ({selectedIds.size})
+            </button>
+          </div>
         )}
       </div>
+
+      {showBulkAssign && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => {
+              setShowBulkAssign(false);
+              setBulkProvider("");
+            }}
+          />
+          <div className="relative w-80 rounded-xl border border-slate-700 bg-slate-900 p-5 shadow-2xl">
+            <h3 className="mb-1 text-sm font-semibold text-slate-100">
+              Bulk Assign {selectedIds.size} Patients
+            </h3>
+            <p className="mb-3 text-xs text-slate-500">
+              Select a provider to assign all selected patients.
+            </p>
+            <select
+              value={bulkProvider}
+              onChange={(e) => setBulkProvider(e.target.value)}
+              className="mb-4 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-xs text-slate-200 outline-none focus:border-blue-500"
+            >
+              <option value="">Select provider…</option>
+              {unitStaff.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} ({s.role.toUpperCase()})
+                </option>
+              ))}
+            </select>
+            <div className="flex gap-2">
+              <button
+                onClick={handleBulkAssign}
+                disabled={!bulkProvider}
+                className="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-500 disabled:opacity-40 transition-colors"
+              >
+                Confirm Assign
+              </button>
+              <button
+                onClick={() => {
+                  setShowBulkAssign(false);
+                  setBulkProvider("");
+                }}
+                className="rounded-lg bg-slate-700 px-3 py-2 text-xs text-slate-300 hover:bg-slate-600"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

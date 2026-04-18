@@ -1,8 +1,6 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/PulseOps-Unit%20Command%20View-0ea5e9?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0zIDEzaDJ2LTJIM3Yyem0wIDRoMnYtMkgzdjJ6bTAgNGgydi0ySDN2MnptNCAwaDJ2LTJIN3Yyem0wLTRoMnYtMkg3djJ6bTAtNGgydi0ySDd2MnptNCAxMmgyVjloLTJ2MTF6bTQtOGgydi0yaC0ydjJ6bTAgNGgydi0yaC0ydjJ6bTAtOGgyVjVoLTJ2NHoiLz48L3N2Zz4=" alt="PulseOps" />
-
-# PulseOps — Unit Command View
+# PulseOps - Unit Command View
 
 **A real-time clinical operations dashboard for hospital charge nurses**
 
@@ -14,8 +12,8 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![Zustand](https://img.shields.io/badge/Zustand-5-FF6B35?style=flat-square)](https://zustand-demo.pmnd.rs)
 [![React Query](https://img.shields.io/badge/React%20Query-5-FF4154?style=flat-square&logo=reactquery&logoColor=white)](https://tanstack.com/query)
-[![Vitest](https://img.shields.io/badge/Vitest-26%20tests-6E9F18?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev)
-[![Tests](https://img.shields.io/badge/Tests-26%20passing-22c55e?style=flat-square)](/)
+[![Vitest](https://img.shields.io/badge/Vitest-33%20tests-6E9F18?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev)
+[![Tests](https://img.shields.io/badge/Tests-33%20passing-22c55e?style=flat-square)](/)
 [![TypeScript Errors](https://img.shields.io/badge/TS%20Errors-0-22c55e?style=flat-square)](/)
 
 </div>
@@ -109,7 +107,7 @@ npm run dev
 
 ```bash
 npm run test -- --run
-# → 26 tests passing
+# → 33 tests passing
 ```
 
 ---
@@ -313,17 +311,11 @@ Produces `mock-server/data/hospital.json` with:
 
 ## Known Limitations
 
-| Area                         | Limitation                                                                                                                                                                                         |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Seed data**                | Patients generated per occupied bed - boarding/pending patients added separately. Real EHR data would have richer cross-unit relationships                                                         |
-| **Admit UI**                 | Admit action backend is implemented (with 15% conflict simulation) but the admit form UI is not exposed in the frontend - only Discharge and Transfer are accessible from the patient detail panel |
-| **Bulk actions**             | Bulk Assign button is UI-only - no backend endpoint exists for bulk provider assignment                                                                                                            |
-| **Pinch-to-zoom**            | Bed map supports scroll wheel zoom but pinch gesture (touch) is not implemented                                                                                                                    |
-| **axe-core CI**              | axe-core is integrated in dev mode via `@axe-core/react` but is not wired into the Vitest CI pipeline as automated assertions                                                                      |
-| **Module Federation**        | The `remoteEntry.js` Module Federation bundle requires a production build (`npm run build`) to test as a micro-frontend remote - not testable in dev mode                                          |
-| **Virtual scroll animation** | Row height transitions (collapsed <-> expanded) are instant - no CSS height animation                                                                                                              |
-| **Offline queue display**    | Queue size shown in connection badge only when offline - not shown during reconnecting state                                                                                                       |
-| **Test coverage**            | Coverage targets (≥80%) are met for SSE manager, URL state, and worker logic. React component tests are not included in this submission                                                            |
+| Area                  | Limitation                                                                                                                                                                                 |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Seed data**         | Patients generated per occupied bed — boarding/pending patients added separately. Real EHR data would have richer cross-unit relationships                                                 |
+| **Module Federation** | The `remoteEntry.js` Module Federation bundle requires a production build (`npm run build`) to test as a micro-frontend remote — not testable in Vite dev server due to plugin constraints |
+| **Test coverage**     | ≥80% coverage met for SSE manager, URL state, and worker logic. Component tests cover Badge, Spinner, and ConnectionBadge. Full integration tests for BedMap and PatientLog not included   |
 
 ---
 
