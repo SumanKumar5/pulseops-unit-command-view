@@ -313,8 +313,8 @@ Produces `mock-server/data/hospital.json` with:
 
 | Area                  | Limitation                                                                                                                                                                                 |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Seed data**         | Patients generated per occupied bed — boarding/pending patients added separately. Real EHR data would have richer cross-unit relationships                                                 |
-| **Module Federation** | The `remoteEntry.js` Module Federation bundle requires a production build (`npm run build`) to test as a micro-frontend remote — not testable in Vite dev server due to plugin constraints |
+| **Seed data**         | Patients generated per occupied bed - boarding/pending patients added separately. Real EHR data would have richer cross-unit relationships                                                 |
+| **Module Federation** | The `remoteEntry.js` Module Federation bundle requires a production build (`npm run build`) to test as a micro-frontend remote - not testable in Vite dev server due to plugin constraints |
 | **Test coverage**     | ≥80% coverage met for SSE manager, URL state, and worker logic. Component tests cover Badge, Spinner, and ConnectionBadge. Full integration tests for BedMap and PatientLog not included   |
 
 ---
